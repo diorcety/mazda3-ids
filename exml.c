@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 
   encrypt(content, file_size);
 
-  fputs(content, stdout);
+  fwrite(content, 1, file_size, stdout);
   fflush(stdout);
 
   free(content);
