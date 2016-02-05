@@ -19,7 +19,12 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "No arg\n");
     return -1;
   }
-  char *password = argv[1];
+  FILE *password_file = fopen(argv[1], "rb");
+  long int password_size = get_file_size(password_file);
+  char *password = (char *)malloc(password_size);
+  fread(password, 1, password_size, password_file);
+  fclose(password_file);
+
   FILE *file = fopen(argv[2], "rb");
   long int file_size = get_file_size(file);
   char *content = (char *)malloc(file_size);
@@ -33,12 +38,10 @@ int main(int argc, char *argv[]) {
 
   char salt[8];
   memcpy(salt, content + 8, 8);
-  const char *data = password;
-  size_t datal = strlen(data);
   char * key = (char *)malloc(32);
   char * iv = (char *)malloc(16);
   char * out = NULL;
-  EVP_CHECK(EVP_BytesToKey(cipher, md, salt, data, datal, 1, key, iv), 24);
+  EVP_CHECK(EVP_BytesToKey(cipher, md, salt, password, password_size, 1, key, iv), 24);
 
   EVP_CHECK(EVP_DecryptInit_ex(&ctx, cipher, 0, key, iv), 1);
   size_t ctxbz = EVP_CIPHER_CTX_block_size(&ctx);
@@ -59,6 +62,7 @@ int main(int argc, char *argv[]) {
 fail:
   ret = 1;
 exit:
+  TRY_FREE(password);
   TRY_FREE(key);
   TRY_FREE(iv);
   TRY_FREE(out);
