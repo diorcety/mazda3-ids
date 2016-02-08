@@ -39,9 +39,9 @@ function decrypt() {
 
 function decrypt_file() {
   dir=$(dirname "$3")
-  rdir=$(python -c "import os.path; print os.path.relpath('$dir', '$1')")
+  rdir=$(python -c "from __future__ import print_function; import os.path; print(os.path.relpath('$dir', '$1'))")
   cdir="$2/$rdir"
-  filename=`basename "$3"`
+  filename=$(basename "$3")
   mkdir -p "$cdir"
   if $DIR/decrypt "$4" "$3" > "$decrypted_file"; then
     if file --mime-type "$decrypted_file" | grep -q "zip"; then
