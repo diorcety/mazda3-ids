@@ -48,10 +48,20 @@ function decrypt_file() {
     if file --mime-type "${outfile}" | grep -q "zip"; then
       echo "Extracting ${outfile} ..."
       unzip "${outfile}" -d "${cdir}" > /dev/null
+      rm "${outfile}"
     fi
   else
     echo "Error decrypting ${3}"
   fi
+}
+
+function unzip_file() {
+  local dir=$(dirname "${3}")
+  local filename=$(basename "${3}")
+  local rdir=$(python -c "from __future__ import print_function; import os.path; print(os.path.relpath('${dir}', '${1}'))")
+  local cdir="${2}/${rdir}"
+  mkdir -p "${cdir}"
+  unzip "${3}" -d "${cdir}" > /dev/null
 }
 
 find "${1}" -type f -exec sh -c "head -c 8 '{}' | grep Salted__ > /dev/null 2>&1" \; -print0 |
@@ -99,3 +109,6 @@ echo "xmlfiles.enc    $xmlfiles"
 # Key getting from IDS/Runtime/NGImporter.exe
 decrypt "${1}" "${2}" "${xmlfiles}" '3#l@$Btx_9S@jrT+EBvD[17ku9B='
 
+xml_text=$(find "${1}" -name xml_text.zip)
+echo "Extracting ${xml_text} ..."
+unzip_file "${1}" "${2}" "${xml_text}"
