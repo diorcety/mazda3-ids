@@ -1,6 +1,10 @@
 #!/bin/env python
 from __future__ import print_function
 
+__author__ = "Yann Diorcet"
+__license__ = "GPL"
+__version__ = "0.0.1"
+
 import lxml.etree as ET
 #import xml.etree.ElementTree as ET
 import os

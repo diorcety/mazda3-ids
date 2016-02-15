@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2016 Yann Diorcet
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 #include <stdio.h>
 #include <stdlib.h>
 
