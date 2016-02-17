@@ -18,7 +18,6 @@ try:
 	from peak.util.proxies import ObjectWrapper
 except:
 	from objproxies import ObjectWrapper
-from datatypes import read_datatypes
 
 # Fix Python 2.x.
 try: input = raw_input
@@ -944,8 +943,8 @@ def main(argv):
 	ids.mnemonics()
 	ids.texts()
 
-	cs = ids.vehicles()
-	obj = cs[IDSKey('8394714383', '8394714383')]
+	#cs = ids.vehicles()
+	#obj = cs[IDSKey('8394714383', '8394714383')]
 	#cs = ids.load_rec('PROTOCOL_REC')
 	#obj = cs[IDSKey('VISO14229_CMU_HS14229_MAZDAType1', 'VISO14229_CMU_HS14229_MAZDAType1')]
 	#cs = ids.load_rec('VIDQID_DESC_ARRAY')
@@ -958,8 +957,8 @@ def main(argv):
 	#obj = cs[IDSKey('CS_17771', 'CS_17771')]
 	#cs = ids.load_rec('PARAM_REC')
 	#obj = cs[IDSKey('MCP_AutDoorLoc_6G', 'PMV_66378')]
-	#cs = ids.load_rec('PARAM_TYPE_REC')
-	#obj = cs[IDSKey('MCP_AutDoorLoc_L_BLK2B1b47')]
+	cs = ids.load_rec('PARAM_TYPE_REC')
+	obj = cs[IDSKey('MCP_AutDoorLoc_L_BLK2B1b47')]
 	browse(ids, obj)
 
 if __name__ == '__main__':
