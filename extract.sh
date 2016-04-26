@@ -95,7 +95,7 @@ echo "fnpss.ds    ${fnpss}"
 runtime=`dirname "${fnpssdll}"`
 echo "Runtime directory ${runtime}"
 key_file=`mktemp`
-$DIR/fnp "${runtime}" "${key_file}"
+wine $DIR/fnp "${runtime}" "${key_file}"
 decrypt_file "${1}" "${2}" "${fnpss}" "${key_file}"
 
 

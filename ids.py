@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 from __future__ import print_function
 
 __author__ = "Yann Diorcet"
@@ -950,15 +950,19 @@ def main(argv):
 	#cs = ids.load_rec('VIDQID_DESC_ARRAY')
 	#obj = cs[IDSKey('165012', '165012')]
 	#cs = ids.load_rec('MCP_FILE_INFO_REC')
-	#obj = cs[IDSKey('PEDN-188K2-B', 'PEDN-188K2-B')]
+	#obj = cs[IDSKey('PSR8-188K2-B', 'PSR8-188K2-B')]
 	#cs = ids.load_rec('MODULE_REC')
 	#obj = cs[IDSKey('R_BCM_MS14229_MAZDAType2', 'ST_VMC_9117')]
 	#cs = ids.load_rec('CONVERTER_STATE_REC')
 	#obj = cs[IDSKey('CS_17771', 'CS_17771')]
 	#cs = ids.load_rec('PARAM_REC')
 	#obj = cs[IDSKey('MCP_AutDoorLoc_6G', 'PMV_66378')]
-	cs = ids.load_rec('PARAM_TYPE_REC')
-	obj = cs[IDSKey('MCP_AutDoorLoc_L_BLK2B1b47')]
+	#cs = ids.load_rec('PARAM_TYPE_REC')
+	#obj = cs[IDSKey('MCP_AutDoorLoc_L_BLK2B1b47')]
+	#cs = ids.load_rec('MENU_ITEM_REC')
+	#obj = cs[IDSKey('VEHICLE_ID_IDS11398')]
+	cs = ids.load_rec('DD_PARAM_GROUP_REC')
+	obj = cs[IDSKey('MCP_R_BCM', 'MCP_R_BCM')]
 	browse(ids, obj)
 
 if __name__ == '__main__':
