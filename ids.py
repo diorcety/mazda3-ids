@@ -242,8 +242,19 @@ class IDSVehicle(object):
     def id(self):
         return IDSKey(self.__n, self.__s)
 
+    def type(self):
+        return 'CONFIG_ITEM_REC'
+
     def __str__(self):
         return '%s' % (self.id())
+
+    def check(self, other):
+        for key, value in self.__qualifiers.items():
+            if key not in other.qualifiers():
+                return False
+            if value != 'BASE' and other.qualifiers()[key] != value:
+                return False
+        return True
 
 
 class IDSAttribute(object):
@@ -717,18 +728,17 @@ class IDSContext(object):
         return self.__mnemonics
 
 
-#
-## Utils
-#
+    #
+    ## Utils
+    #
 
-def get_references(ctx, obj):
-    if isinstance(obj, IDSObject):
-        types = [(t, key, t.attributes()[key]) for t in ctx.datatypes().values() for key in t.attributes() if
+    def get_references(self, obj):
+        types = [(t, key, t.attributes()[key]) for t in self.datatypes().values() for key in t.attributes() if
                  t.attributes()[key].type() == obj.type()]
 
         ret = []
         for (t, key, attribute_type) in types:
-            for n in ctx.load_rec(t.name()).values():
+            for n in self.load_rec(t.name()).values():
                 if key in n.attributes():
                     attribute = n.attributes()[key]
                     if attribute_type.array():
@@ -737,34 +747,31 @@ def get_references(ctx, obj):
                     else:
                         if obj.id().a() == attribute:
                             ret.append(n)
+        if isinstance(obj, IDSVehicle):
+            for t in self.datatypes().values():
+                for n in self.load_rec(t.name()).values():
+                    if isinstance(n, IDSObject):
+                        for x in n.qualifications():
+                            if IDSKey(x) == obj.id():
+                                ret.append(n)
         return ret
-    elif isinstance(obj, IDSVehicle):
-        ret = []
-        for t in ctx.datatypes().values():
-            for n in ctx.load_rec(t.name()).values():
-                if isinstance(n, IDSObject):
-                    for x in n.qualifications():
-                        if IDSKey(x) == obj.id():
-                            ret.append(n)
-        return ret
-    else:
-        raise ValueError("%s is not supported" % type(obj))
 
+    def get_vehicles(self, obj):
+        return [self.vehicles()[IDSKey(x)] for x in obj.qualifications()]
 
-def get_vehicles(ctx, obj):
-    return [ctx.vehicles()[IDSKey(x)] for x in obj.qualifications()]
+    def get_parents(self, obj):
+        return [v for v in self.vehicles().values() if v.check(obj)]
 
-
-def get_modules(ctx, obj):
-    modules = {}
-    for module in ctx.modules().values():
-        ret = []
-        for v in module.vehicles():
-            if v.check(obj):
-                ret.append(v)
-        if len(ret) != 0:
-            modules[module.name()] = [x.files() for x in ret]
-    return modules
+    def get_modules(self, obj):
+        modules = {}
+        for module in self.modules().values():
+            ret = []
+            for v in module.vehicles():
+                if v.check(obj):
+                    ret.append(v)
+            if len(ret) != 0:
+                modules[module.name()] = [x.files() for x in ret]
+        return modules
 
 
 #
@@ -876,7 +883,7 @@ class MenuEntry(object):
         return self.__value
 
 
-def menu(ctx, obj, vehicles, references, modules, previous=None, next=None):
+def menu(ctx, obj, vehicles, references, parents, modules, previous=None, next=None):
     choices = {}
 
     if isinstance(obj, list):
@@ -910,6 +917,9 @@ def menu(ctx, obj, vehicles, references, modules, previous=None, next=None):
         if references:
             print('r: References')
             choices['r'] = references
+        if parents:
+            print('x: Parents')
+            choices['x'] = parents
         if modules:
             print('m: Modules')
             choices['m'] = modules
@@ -920,7 +930,7 @@ def menu(ctx, obj, vehicles, references, modules, previous=None, next=None):
     if next:
         print('n: Next')
         choices['n'] = next
-    print('q: Quit')
+    print('q: Exit')
     choices['q'] = None
     return choices
 
@@ -930,6 +940,7 @@ def browse(ctx, obj):
     NEXT_KEY = "NEXT"
     REFERENCES_KEY = "REFERENCES"
     VEHICLES_KEY = "VEHICLES"
+    PARENTS_KEY = "PARENTS"
     MODULES_KEY = "MODULES"
     previous = []
     next = []
@@ -941,7 +952,7 @@ def browse(ctx, obj):
         display(ctx, obj)
 
         # Print corresponding menu
-        choices = menu(ctx, obj, VEHICLES_KEY, REFERENCES_KEY, MODULES_KEY, PREVIOUS_KEY if len(previous) > 0 else None,
+        choices = menu(ctx, obj, VEHICLES_KEY, REFERENCES_KEY, PARENTS_KEY, MODULES_KEY, PREVIOUS_KEY if len(previous) > 0 else None,
                        NEXT_KEY if len(next) > 0 else None)
 
         # Interpret the choice
@@ -957,11 +968,13 @@ def browse(ctx, obj):
                 obj = next.pop(0)
             else:
                 if obj == REFERENCES_KEY:
-                    obj = get_references(ctx, old)
+                    obj = ctx.get_references(old)
                 elif obj == VEHICLES_KEY:
-                    obj = get_vehicles(ctx, old)
+                    obj = ctx.get_vehicles(old)
+                elif obj == PARENTS_KEY:
+                    obj = ctx.get_parents(old)
                 elif obj == MODULES_KEY:
-                    obj = get_modules(ctx, old)
+                    obj = ctx.get_modules(old)
                 previous.append(old)
                 next[:] = []
         else:
@@ -991,8 +1004,8 @@ def main(argv):
     # obj = cs[IDSKey('VISO14229_CMU_HS14229_MAZDAType1', 'VISO14229_CMU_HS14229_MAZDAType1')]
     # cs = ids.load_rec('VIDQID_DESC_ARRAY')
     # obj = cs[IDSKey('165012', '165012')]
-    # cs = ids.load_rec('MCP_FILE_INFO_REC')
-    # obj = cs[IDSKey('PSR8-188K2-B', 'PSR8-188K2-B')]
+    cs = ids.load_rec('MCP_FILE_INFO_REC')
+    obj = cs[IDSKey('PSR8-188K2-B', 'PSR8-188K2-B')]
     # cs = ids.load_rec('MODULE_REC')
     # obj = cs[IDSKey('R_BCM_MS14229_MAZDAType2', 'ST_VMC_9117')]
     # cs = ids.load_rec('CONVERTER_STATE_REC')
@@ -1003,8 +1016,12 @@ def main(argv):
     # obj = cs[IDSKey('MCP_AutDoorLoc_L_BLK2B1b47')]
     # cs = ids.load_rec('MENU_ITEM_REC')
     # obj = cs[IDSKey('VEHICLE_ID_IDS11398')]
-    cs = ids.load_rec('DD_PARAM_GROUP_REC')
-    obj = cs[IDSKey('MCP_R_BCM', 'MCP_R_BCM')]
+    # cs = ids.load_rec('DD_PARAM_GROUP_REC')
+    # obj = cs[IDSKey('MCP_R_BCM', 'MCP_R_BCM')]
+    # cs = ids.load_rec('PARAM_ADDR_REC')
+    # obj = cs[IDSKey('PARAM_ADDR8063', 'PARAM_ADDR8063')]
+    # cs = ids.load_rec('PARAM_REC')
+    # obj = cs[IDSKey('MCP_RPA_U387U388', 'PMV_50713')]
     browse(ids, obj)
 
 
