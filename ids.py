@@ -44,45 +44,15 @@ else:
     basestring = basestring
 
 
-class IDSDescription(object):
-    @classmethod
-    def parse(cls, elem):
-        id = elem.attrib['id'] if 'id' in elem.attrib else None
-        text = elem.text
-        return IDSDescription(id, text)
-
-    def __init__(self, id, text):
-        super(IDSDescription, self).__init__()
-        self.__id = id
-        self.__text = text
-
-    def text(self, ctx=None):
-        id = self.__id
-        if id:
-            if ctx:
-                if id.startswith('@'):
-                    id = id[1:]
-                    mnemonics = ctx.mnemonics()
-                    if id in mnemonics:
-                        return mnemonics[id]
-                else:
-                    texts = ctx.texts()
-                    if id in texts:
-                        return texts[id]
-            return id
-        return self.__text
-
-
 class IDSQualifier(object):
     @classmethod
-    def parse(cls, elem, description):
-        id = elem.attrib['id']
-        id_value = elem.attrib['id_value']
-        return IDSQualifier(id, id_value, description)
+    def parse(cls, elem):
+        id = elem.attrib['m']
+        description = elem.attrib['v']
+        return IDSQualifier(id, description)
 
-    def __init__(self, id, id_value, description):
+    def __init__(self, id, description):
         self.__id = id
-        self.__id_value = id_value
         self.__values = {}
         self.__description = description
 
@@ -601,37 +571,32 @@ class IDSContext(object):
     def qualifiers(self):
         if self.__qualifiers == None:
             self.__qualifiers = {}
-            qualifiers_file = os.path.join(os.path.join(self.__context.root, 'XMLFiles'), 'CONFIG_MODEL_FORD.xml')
-            if not os.path.isfile(qualifiers_file):
-                raise ValueError("CONFIG_MODEL_FORD.xml file not found %s" % (qualifiers_file))
+            vehicle_file = os.path.join(os.path.join(self.__context.root, 'Data'), 'vehicle.xml')
+            if not os.path.isfile(vehicle_file):
+                raise ValueError("vehicle.xml file not found %s" % (vehicle_file))
+            vehicle_1_file = os.path.join(os.path.join(self.__context.root, 'Data'), 'vehicle_1.xml')
+            if not os.path.isfile(vehicle_1_file):
+                raise ValueError("vehicle_1.xml file not found %s" % (vehicle_1_file))
 
-            file = open_xml(qualifiers_file)
+            file = open_xml(vehicle_file)
             try:
-                stack = []
+                for event, elem in iterparse(file):
+                    if event == 'end':
+                        if elem.tag == 'm':
+                            qualifier = IDSQualifier.parse(elem)
+                            self.__qualifiers[qualifier.id()] = qualifier
+            finally:
+                file.close()
+
+            file = open_xml(vehicle_1_file)
+            try:
                 for event, elem in iterparse(file):
                     if event == 'start':
-                        if elem.tag == 'qualifier':
-                            values = {}
-                            description = None
-                        if elem.tag == 'value':
-                            value_description = None
-                        stack.append(elem)
+                        if elem.tag == 'm':
+                            qualifier = self.__qualifiers[elem.attrib['t']]
                     elif event == 'end':
-                        stack.pop()
-                        if elem.tag == 'tm':
-                            try:
-                                if stack[-1].tag == 'value':
-                                    value_description = IDSDescription.parse(elem)
-                                else:
-                                    description = IDSDescription.parse(elem)
-                            except KeyError as e:
-                                print_xml_error("Issue parsing", elem)
-                        elif elem.tag == 'value':
-                            values[elem.attrib['id']] = value_description
-                        elif elem.tag == 'qualifier':
-                            qualifier = IDSQualifier.parse(elem, description)
-                            qualifier.values().update(values)
-                            self.__qualifiers[qualifier.id()] = qualifier
+                        if elem.tag == 'z':
+                            qualifier.values()[elem.attrib['v']] = elem.attrib['m']
             finally:
                 file.close()
 
@@ -834,9 +799,10 @@ def print_rec(ctx, obj, tab=0, limit=-1, attribute_type=None):
                     '\t' * (tab + 1), attribute.name(), attribute.type(), "[]" if attribute.array() else ""))
     elif isinstance(obj, IDSVehicle):
         for key, value in obj.qualifiers().items():
+            item = object_string(ctx, ctx.qualifiers()[key].description(), 'MESSAGE')
             if value in ctx.qualifiers()[key].values():
-                value = ctx.qualifiers()[key].values()[value].text(ctx)
-            print("%s- %s: %s" % ('\t' * (tab + 1), ctx.qualifiers()[key].description().text(ctx), value))
+                value = object_string(ctx, ctx.qualifiers()[key].values()[value], 'MESSAGE')
+            print("%s- %s: %s" % ('\t' * (tab + 1), item, value))
 
     elif isinstance(obj, IDSXMLFile):
         print("%s- %s" % ('\t' * (tab + 1), obj.filename()))
@@ -987,7 +953,7 @@ def browse(ctx, obj):
 #
 
 def main(argv):
-    parser = argparse.ArgumentParser(prog=sys.argv[0], description="USS build system")
+    parser = argparse.ArgumentParser(prog=sys.argv[0], description="IDS")
     parser.add_argument('--lang', action='store', default="ENG", help="Default language")
     parser.add_argument('root')
     args = parser.parse_args(argv[1:])
