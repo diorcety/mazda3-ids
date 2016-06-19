@@ -5,3 +5,6 @@ decrypt
 encrypt
 exml
 fnp
+build/
+dist/
+ids.egg-info/
