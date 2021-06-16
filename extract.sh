@@ -10,6 +10,13 @@ done
 DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
 
 
+WINE=wineconsole
+if [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
+    WINE=
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+    WINE=
+fi
+
 if [ $# -ne 2 ]; then
   echo "$0 source destination"
   exit 1
@@ -95,7 +102,7 @@ echo "fnpss.ds    ${fnpss}"
 runtime=`dirname "${fnpssdll}"`
 echo "Runtime directory ${runtime}"
 key_file=`mktemp`
-wine $DIR/fnp "${runtime}" "${key_file}"
+$WINE $DIR/fnp "${runtime}" "${key_file}"
 decrypt_file "${1}" "${2}" "${fnpss}" "${key_file}"
 
 
