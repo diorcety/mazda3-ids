@@ -47,7 +47,7 @@ function decrypt() {
 function decrypt_file() {
   local dir=$(dirname "${3}")
   local filename=$(basename "${3}")
-  local rdir=$(python -c "from __future__ import print_function; import os.path; print(os.path.relpath('${dir}', '${1}'))")
+  local rdir=$(python3 -c "from __future__ import print_function; import os.path; print(os.path.relpath('${dir}', '${1}'))")
   local cdir="${2}/${rdir}"
   local outfile=${cdir}/${filename}
   mkdir -p "${cdir}"
@@ -65,7 +65,7 @@ function decrypt_file() {
 function unzip_file() {
   local dir=$(dirname "${3}")
   local filename=$(basename "${3}")
-  local rdir=$(python -c "from __future__ import print_function; import os.path; print(os.path.relpath('${dir}', '${1}'))")
+  local rdir=$(python3 -c "from __future__ import print_function; import os.path; print(os.path.relpath('${dir}', '${1}'))")
   local cdir="${2}/${rdir}"
   mkdir -p "${cdir}"
   unzip "${3}" -d "${cdir}" > /dev/null
