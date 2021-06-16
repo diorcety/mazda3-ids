@@ -16,6 +16,7 @@ setup(
     py_modules=['ids'],
     install_requires=[
         'termcolor',
+        'lxml',
         proxy,
     ],
 )
