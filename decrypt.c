@@ -47,8 +47,7 @@ int main(int argc, char *argv[]) {
     fread(content, 1, file_size, file);
     fclose(file);
 
-    EVP_CIPHER_CTX ctx;
-    EVP_CIPHER_CTX_init(&ctx);
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     const EVP_CIPHER *cipher = EVP_des_ede3_cbc();
     const EVP_MD *md = EVP_md5();
 
@@ -59,17 +58,17 @@ int main(int argc, char *argv[]) {
     char *out = NULL;
     EVP_CHECK(EVP_BytesToKey(cipher, md, salt, password, password_size, 1, key, iv), 24);
 
-    EVP_CHECK(EVP_DecryptInit_ex(&ctx, cipher, 0, key, iv), 1);
-    size_t ctxbz = EVP_CIPHER_CTX_block_size(&ctx);
+    EVP_CHECK(EVP_DecryptInit_ex(ctx, cipher, 0, key, iv), 1);
+    size_t ctxbz = EVP_CIPHER_CTX_block_size(ctx);
 
     int outl;
     out = (char *) malloc(file_size + ctxbz);
-    EVP_CHECK(EVP_DecryptUpdate(&ctx, out, &outl, content + 0x10, file_size - 0x10), 1);
+    EVP_CHECK(EVP_DecryptUpdate(ctx, out, &outl, content + 0x10, file_size - 0x10), 1);
 
     int outl2;
-    EVP_CHECK(EVP_DecryptFinal_ex(&ctx, out + outl, &outl2), 1);
+    EVP_CHECK(EVP_DecryptFinal_ex(ctx, out + outl, &outl2), 1);
 
-    EVP_CHECK(EVP_CIPHER_CTX_cleanup(&ctx), 1);
+    EVP_CIPHER_CTX_free(ctx);
 
     fwrite(out, 1, outl + outl2, stdout);
     fflush(stdout);
